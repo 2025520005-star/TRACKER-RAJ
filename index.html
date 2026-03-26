@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>My Progress Tracker</title>
+<link href="https://fonts.googleapis.com/css2?family=Lora:wght@400;500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root{--bg:#F6F3EE;--surface:#FFF;--s2:#EEEAE3;--s3:#E6E1D8;--border:#E0DBD2;--b2:#C9C3B8;--text:#1C1A16;--t2:#6B6459;--t3:#A09890;--green:#2A6040;--gbg:#E4F2EB;--gb:#A8D4B8;}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;padding:20px 14px 80px}
+.page{max-width:1100px;margin:0 auto}
+header{display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:10px;padding-bottom:14px;border-bottom:1px solid var(--border);margin-bottom:18px}
+header h1{font-family:'Lora',serif;font-size:23px;font-weight:500;letter-spacing:-.3px}
+header p{font-size:12px;color:var(--t3);margin-top:2px}
+.today-pill{font-size:12px;color:var(--t2);padding:4px 11px;border-radius:20px;background:var(--s2);border:1px solid var(--border);white-space:nowrap;margin-top:4px}
+.tabs{display:flex;gap:2px;margin-bottom:18px;background:var(--s2);border-radius:10px;padding:3px;width:fit-content;flex-wrap:wrap}
+.tab{font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;padding:6px 15px;border-radius:7px;border:none;background:transparent;color:var(--t2);cursor:pointer;transition:all .15s;white-space:nowrap}
+.tab.on{background:var(--surface);color:var(--text);box-shadow:0 1px 4px rgba(0,0,0,.08)}
+.sec{display:none}.sec.on{display:block}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:18px}
+.sc{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:13px 15px}
+.sc-lbl{font-size:10px;color:var(--t3);font-weight:600;letter-spacing:.05em;text-transform:uppercase;margin-bottom:4px}
+.sc-val{font-size:24px;font-weight:600;line-height:1}
+.sc-sub{font-size:11px;color:var(--t3);margin-top:3px}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.three{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+@media(max-width:720px){.two,.three{grid-template-columns:1fr}}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:14px}
+.card:last-child{margin-bottom:0}
+.ch{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;gap:8px;flex-wrap:wrap}
+.ct{font-family:'Lora',serif;font-size:15px;font-weight:500}
+.btn-add{font-family:'DM Sans',sans-serif;font-size:11px;font-weight:600;padding:4px 11px;border-radius:20px;border:1px solid var(--b2);background:transparent;color:var(--t2);cursor:pointer;transition:all .15s}
+.btn-add:hover{background:var(--s2)}
+.nav-row{display:flex;align-items:center;gap:8px}
+.nav-btn{width:28px;height:28px;border-radius:50%;border:1px solid var(--border);background:var(--surface);color:var(--t2);cursor:pointer;font-size:15px;display:flex;align-items:center;justify-content:center;transition:all .15s}
+.nav-btn:hover{background:var(--s2);border-color:var(--b2)}
+.nav-lbl{font-size:12px;color:var(--t2);font-weight:500;min-width:140px;text-align:center}
+.task-item{display:flex;align-items:center;gap:9px;padding:7px 9px;border-radius:7px;border:1px solid var(--border);background:var(--surface);margin-bottom:4px;cursor:pointer;transition:all .12s}
+.task-item:hover{border-color:var(--b2)}
+.task-item.done{background:var(--gbg);border-color:var(--gb)}
+.task-item.done .task-txt{text-decoration:line-through;color:var(--t3)}
+.chkbox{width:17px;height:17px;border-radius:4px;border:1.5px solid var(--b2);flex-shrink:0;display:flex;align-items:center;justify-content:center;background:var(--surface);transition:all .15s}
+.task-item.done .chkbox{background:var(--green);border-color:var(--green)}
+.chkbox svg{display:none;width:9px;height:9px}
+.task-item.done .chkbox svg{display:block}
+.task-txt{font-size:12px;flex:1}
+.cpill{font-size:9px;padding:2px 7px;border-radius:10px;font-weight:600;flex-shrink:0}
+.delbtn{background:none;border:none;color:var(--t3);cursor:pointer;font-size:13px;padding:1px 4px;border-radius:4px;opacity:0;transition:opacity .12s}
+.task-item:hover .delbtn{opacity:1}
+.empty{text-align:center;padding:22px 0;color:var(--t3);font-size:12px;font-style:italic}
+.std{background:#DAE9F8;color:#0C3A6B}.cls{background:#E8E4F8;color:#3C2E8A}.wrk{background:#D8EFC8;color:#1E4D0A}
+.mus{background:#FDE8B8;color:#5C3500}.qiet{background:#CCF0E2;color:#064530}.spt{background:#DAEEE8;color:#0A3D2E}
+.chu{background:#F0E8F8;color:#3A1870}.gen{background:#EDE9E0;color:#3A3530}
+.goal-item{padding:11px 0;border-bottom:1px solid var(--border)}
+.goal-item:last-child{border-bottom:none;padding-bottom:0}
+.gi-row{display:flex;align-items:center;gap:6px;margin-bottom:5px}
+.gi-name{font-size:13px;font-weight:500;flex:1}
+.gi-meta{font-size:11px;color:var(--t3)}
+.track{height:7px;background:var(--s2);border-radius:10px;overflow:hidden;margin-bottom:3px}
+.fill{height:100%;border-radius:10px;transition:width .5s ease}
+.fill.hi{background:#2A6040}.fill.md{background:#C49A00}.fill.lo{background:#C03030}
+.gpct{font-size:10px;color:var(--t3);text-align:right}
+.step-row{display:flex;align-items:center;gap:6px;margin-top:5px}
+.step-btn{width:22px;height:22px;border-radius:50%;border:1px solid var(--b2);background:transparent;color:var(--t2);cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;transition:all .12s}
+.step-btn:hover{background:var(--s2)}
+.step-val{font-size:12px;font-weight:600;min-width:70px;text-align:center}
+.form{background:var(--s2);border:1px solid var(--border);border-radius:9px;padding:11px;margin-top:9px;display:none}
+.form.on{display:block}
+.form input,.form select{width:100%;font-family:'DM Sans',sans-serif;font-size:12px;padding:6px 9px;border:1px solid var(--border);border-radius:6px;background:var(--surface);color:var(--text);outline:none;margin-bottom:6px}
+.form input:focus,.form select:focus{border-color:var(--b2)}
+.frow{display:flex;gap:6px}.frow input,.frow select{margin-bottom:0;flex:1}
+.fbtns{display:flex;gap:6px;margin-top:7px}
+.fbtns button{font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;padding:6px 13px;border-radius:6px;cursor:pointer;border:1px solid transparent;transition:all .12s}
+.fb-ok{background:var(--text);color:var(--bg)}.fb-ok:hover{opacity:.85}
+.fb-no{background:transparent;color:var(--t2);border-color:var(--border)!important}.fb-no:hover{background:var(--surface)}
+.cw{position:relative;height:190px;margin-top:6px}
+.cw-md{position:relative;height:240px;margin-top:6px}
+.cw-lg{position:relative;height:280px;margin-top:6px}
+.week-heat{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;margin-top:10px}
+.wh-day{text-align:center}
+.wh-lbl{font-size:9px;color:var(--t3);margin-bottom:3px;font-weight:700;letter-spacing:.05em;text-transform:uppercase}
+.wh-box{height:44px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;border:1px solid transparent;transition:all .2s}
+.month-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;margin-top:8px}
+.mhdr{font-size:9px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--t3);text-align:center;padding:4px 0}
+.mcell{min-height:52px;border-radius:6px;border:1px solid var(--border);padding:4px 5px;cursor:pointer;transition:all .15s;background:var(--surface)}
+.mcell:hover{border-color:var(--b2)}
+.mcell.ec{background:transparent;border-color:transparent;cursor:default}
+.mcell.tdc{border-color:var(--green);border-width:2px}
+.mcell.fc{opacity:.4}
+.mc-num{font-size:10px;font-weight:600;color:var(--t2);margin-bottom:2px}
+.mc-bar{height:4px;border-radius:3px;background:var(--s3);overflow:hidden;margin-bottom:2px}
+.mc-fill{height:100%;border-radius:3px;transition:width .3s}
+.mc-ct{font-size:9px;color:var(--t3)}
+.year-wrap{overflow-x:auto;padding-bottom:6px}
+.yh-row{display:flex;gap:2px;align-items:center;margin-bottom:2px}
+.yh-ml{font-size:9px;color:var(--t3);width:28px;flex-shrink:0;font-weight:600}
+.yh-cell{width:13px;height:13px;border-radius:2px;flex-shrink:0;cursor:pointer;transition:opacity .12s}
+.yh-cell:hover{opacity:.7;outline:1px solid var(--b2)}
+.yh-legend{display:flex;align-items:center;gap:6px;margin-top:10px;font-size:10px;color:var(--t3)}
+.streak-num{font-size:30px;font-weight:600;color:var(--green);line-height:1}
+.streak-unit{font-size:11px;color:var(--t3);margin-top:3px}
+.day-sec{margin-bottom:12px}
+.day-sec-hdr{display:flex;align-items:center;gap:7px;margin-bottom:6px}
+.dbadge{font-size:9px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:2px 8px;border-radius:20px;background:var(--s2);color:var(--t2)}
+.dbadge.tdy{background:var(--gbg);color:var(--green);border:1px solid var(--gb)}
+.yhtt{position:fixed;background:var(--text);color:var(--bg);font-size:11px;padding:5px 9px;border-radius:6px;pointer-events:none;display:none;z-index:999;white-space:nowrap}
+</style>
+</head>
+<body>
+<div class="page">
+<header>
+  <div><h1>My Progress Tracker</h1><p>Goals · Daily tasks · Year-long tracking</p></div>
+  <span class="today-pill" id="todayPill"></span>
+</header>
+<div class="tabs">
+  <button class="tab on" onclick="go('today',this)">Today</button>
+  <button class="tab" onclick="go('week',this)">Week</button>
+  <button class="tab" onclick="go('month',this)">Month</button>
+  <button class="tab" onclick="go('goals',this)">Goals</button>
+  <button class="tab" onclick="go('year',this)">Year</button>
+</div>
+
+<!-- TODAY -->
+<div class="sec on" id="sec-today">
+  <div class="stats" id="statsToday"></div>
+  <div class="two">
+    <div>
+      <div class="card">
+        <div class="ch"><span class="ct">Today's tasks</span><button class="btn-add" onclick="tf('fToday')">+ Add task</button></div>
+        <div class="form" id="fToday">
+          <input type="text" id="fT-txt" placeholder="e.g. Read OT chapter 3">
+          <select id="fT-cat"><option value="std">Study</option><option value="cls">Class</option><option value="wrk">Workout</option><option value="mus">Music</option><option value="qiet">Quiet time</option><option value="spt">Sport</option><option value="chu">Church</option><option value="gen">General</option></select>
+          <div class="fbtns"><button class="fb-ok" onclick="addTaskToday()">Add</button><button class="fb-no" onclick="tf('fToday')">Cancel</button></div>
+        </div>
+        <div id="list-today"></div>
+      </div>
+    </div>
+    <div>
+      <div class="card"><div class="ch"><span class="ct">Completion</span></div><div class="cw"><canvas id="ch-donut"></canvas></div></div>
+      <div class="card" style="margin-top:14px"><div class="ch"><span class="ct">Goal progress</span></div><div id="goal-mini"></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- WEEK -->
+<div class="sec" id="sec-week">
+  <div class="ch" style="margin-bottom:14px">
+    <div class="nav-row">
+      <button class="nav-btn" onclick="weekOffset--;renderWeek()">&#8249;</button>
+      <span class="nav-lbl" id="weekLabel"></span>
+      <button class="nav-btn" onclick="weekOffset++;renderWeek()">&#8250;</button>
+    </div>
+    <button class="btn-add" onclick="tf('fWeek')">+ Add task</button>
+  </div>
+  <div class="form" id="fWeek" style="margin-bottom:14px">
+    <input type="text" id="fW-txt" placeholder="Task name">
+    <div class="frow">
+      <select id="fW-day"><option>Mon</option><option>Tue</option><option>Wed</option><option>Thu</option><option>Fri</option><option>Sat</option><option>Sun</option></select>
+      <select id="fW-cat"><option value="std">Study</option><option value="cls">Class</option><option value="wrk">Workout</option><option value="mus">Music</option><option value="qiet">Quiet time</option><option value="spt">Sport</option><option value="chu">Church</option><option value="gen">General</option></select>
+    </div>
+    <div class="fbtns"><button class="fb-ok" onclick="addWeekTask()">Add</button><button class="fb-no" onclick="tf('fWeek')">Cancel</button></div>
+  </div>
+  <div class="card"><div class="ch"><span class="ct">Daily completion</span></div><div class="week-heat" id="weekHeat"></div></div>
+  <div class="two" style="margin-top:14px">
+    <div class="card"><div class="ch"><span class="ct">Tasks per day</span></div><div class="cw-md"><canvas id="ch-weekbar"></canvas></div></div>
+    <div class="card"><div class="ch"><span class="ct">By category</span></div><div class="cw-md"><canvas id="ch-catpie"></canvas></div></div>
+  </div>
+  <div class="card" style="margin-top:14px"><div class="ch"><span class="ct">All tasks this week</span></div><div id="week-task-list"></div></div>
+</div>
+
+<!-- MONTH -->
+<div class="sec" id="sec-month">
+  <div class="ch" style="margin-bottom:14px">
+    <div class="nav-row">
+      <button class="nav-btn" onclick="monthOffset--;renderMonth()">&#8249;</button>
+      <span class="nav-lbl" id="monthLabel"></span>
+      <button class="nav-btn" onclick="monthOffset++;renderMonth()">&#8250;</button>
+    </div>
+  </div>
+  <div class="card"><div class="ch"><span class="ct">Monthly overview</span></div><div class="month-grid" id="monthGrid"></div></div>
+  <div class="two" style="margin-top:14px">
+    <div class="card"><div class="ch"><span class="ct">Daily completion %</span></div><div class="cw-md"><canvas id="ch-monthline"></canvas></div></div>
+    <div class="card"><div class="ch"><span class="ct">Category breakdown</span></div><div class="cw-md"><canvas id="ch-monthcat"></canvas></div></div>
+  </div>
+</div>
+
+<!-- GOALS -->
+<div class="sec" id="sec-goals">
+  <div class="card">
+    <div class="ch"><span class="ct">My goals</span><button class="btn-add" onclick="tf('fGoal')">+ Add goal</button></div>
+    <div class="form" id="fGoal">
+      <input type="text" id="fG-name" placeholder="Goal name e.g. Finish NT reading">
+      <div class="frow">
+        <input type="number" id="fG-target" placeholder="Target" min="1">
+        <input type="text" id="fG-unit" placeholder="Unit (chapters, times...)">
+        <select id="fG-cat"><option value="std">Study</option><option value="cls">Class</option><option value="wrk">Workout</option><option value="mus">Music</option><option value="qiet">Quiet</option><option value="spt">Sport</option><option value="chu">Church</option><option value="gen">General</option></select>
+      </div>
+      <div class="fbtns"><button class="fb-ok" onclick="addGoal()">Add goal</button><button class="fb-no" onclick="tf('fGoal')">Cancel</button></div>
+    </div>
+    <div id="goal-list"></div>
+  </div>
+  <div class="card" style="margin-top:14px"><div class="ch"><span class="ct">Goals overview</span></div><div class="cw-lg"><canvas id="ch-goals"></canvas></div></div>
+</div>
+
+<!-- YEAR -->
+<div class="sec" id="sec-year">
+  <div class="stats" id="statsYear"></div>
+  <div class="card">
+    <div class="ch">
+      <span class="ct">Year heatmap</span>
+      <div class="nav-row">
+        <button class="nav-btn" onclick="yearOffset--;renderYear()">&#8249;</button>
+        <span class="nav-lbl" id="yearLabel" style="min-width:50px;text-align:center"></span>
+        <button class="nav-btn" onclick="yearOffset++;renderYear()">&#8250;</button>
+      </div>
+    </div>
+    <div class="year-wrap"><div id="yearHeat"></div></div>
+    <div class="yh-legend"><span>Less</span><div class="yh-cell" style="background:#E6E1D8"></div><div class="yh-cell" style="background:#A8D4B8"></div><div class="yh-cell" style="background:#6EBA94"></div><div class="yh-cell" style="background:#2A6040"></div><span>More</span></div>
+  </div>
+  <div class="two" style="margin-top:14px">
+    <div class="card">
+      <div class="ch"><span class="ct">Monthly avg completion</span></div>
+      <div class="cw-lg"><canvas id="ch-history"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="ch"><span class="ct">All-time streak</span></div>
+      <div style="display:flex;gap:20px;flex-wrap:wrap;margin-bottom:14px">
+        <div><div class="sc-lbl" style="font-size:10px;color:var(--t3);font-weight:600;letter-spacing:.05em;text-transform:uppercase;margin-bottom:4px">Current</div><div style="display:flex;align-items:center;gap:6px"><span class="streak-num" id="curStreak">0</span><div><div style="font-size:18px">&#128293;</div><div class="streak-unit">days</div></div></div></div>
+        <div><div class="sc-lbl" style="font-size:10px;color:var(--t3);font-weight:600;letter-spacing:.05em;text-transform:uppercase;margin-bottom:4px">Best ever</div><div style="display:flex;align-items:center;gap:6px"><span class="streak-num" id="maxStreak">0</span><div><div style="font-size:18px">&#127942;</div><div class="streak-unit">days</div></div></div></div>
+        <div><div class="sc-lbl" style="font-size:10px;color:var(--t3);font-weight:600;letter-spacing:.05em;text-transform:uppercase;margin-bottom:4px">Total active</div><div style="display:flex;align-items:center;gap:6px"><span class="streak-num" id="totalDays">0</span><div><div style="font-size:18px">&#128197;</div><div class="streak-unit">days</div></div></div></div>
+      </div>
+      <div class="cw"><canvas id="ch-streak"></canvas></div>
+    </div>
+  </div>
+</div>
+</div>
+<div class="yhtt" id="yhtt"></div>
+
+<script>
+const KEY='tracker_v2';
+const DS=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+const MONTHS=['January','February','March','April','May','June','July','August','September','October','November','December'];
+const MS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const CATS={std:'Study',cls:'Class',wrk:'Workout',mus:'Music',qiet:'Quiet',spt:'Sport',chu:'Church',gen:'General'};
+const CC={std:'#A8CCF0',cls:'#C5BEF0',wrk:'#A2D67A',mus:'#F5C060',qiet:'#6EDAB8',spt:'#72CCAA',chu:'#C8A8F0',gen:'#C8C2B5'};
+let S={tasks:{},goals:[]};
+let weekOffset=0,monthOffset=0,yearOffset=0;
+let CH={};
+
+function save(){localStorage.setItem(KEY,JSON.stringify(S));}
+function load(){try{const r=localStorage.getItem(KEY);if(r)S=JSON.parse(r);}catch(e){}}
+function p(n){return String(n).padStart(2,'0');}
+function fmt(d){return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}`;}
+function todayKey(){return fmt(new Date());}
+function uid(){return Math.random().toString(36).slice(2,8);}
+
+function getWeekKeys(off=0){
+  const t=new Date(),dow=t.getDay(),m=new Date(t);
+  m.setDate(t.getDate()-(dow===0?6:dow-1)+(off*7));
+  return Array.from({length:7},(_,i)=>{const d=new Date(m);d.setDate(m.getDate()+i);return fmt(d);});
+}
+function getMonthInfo(off=0){
+  const t=new Date(),d=new Date(t.getFullYear(),t.getMonth()+off,1);
+  return {year:d.getFullYear(),month:d.getMonth()};
+}
+
+function ts(k){return S.tasks[k]||[];}
+function done(k){return ts(k).filter(t=>t.done);}
+
+function tf(id){document.getElementById(id).classList.toggle('on');}
+
+function addTaskToday(){
+  const txt=document.getElementById('fT-txt').value.trim();
+  if(!txt)return;
+  const k=todayKey();
+  if(!S.tasks[k])S.tasks[k]=[];
+  S.tasks[k].push({id:uid(),text:txt,cat:document.getElementById('fT-cat').value,done:false});
+  document.getElementById('fT-txt').value='';
+  tf('fToday');save();renderAll();
+}
+
+function addWeekTask(){
+  const txt=document.getElementById('fW-txt').value.trim();if(!txt)return;
+  const di=DS.indexOf(document.getElementById('fW-day').value);
+  const k=getWeekKeys(weekOffset)[di>=0?di:0];
+  if(!S.tasks[k])S.tasks[k]=[];
+  S.tasks[k].push({id:uid(),text:txt,cat:document.getElementById('fW-cat').value,done:false});
+  document.getElementById('fW-txt').value='';
+  tf('fWeek');save();renderAll();
+}
+
+function toggleTask(k,id){
+  const t=(S.tasks[k]||[]).find(t=>t.id===id);
+  if(t){t.done=!t.done;save();renderAll();}
+}
+function delTask(k,id){
+  if(!S.tasks[k])return;
+  S.tasks[k]=S.tasks[k].filter(t=>t.id!==id);
+  save();renderAll();
+}
+
+function tHTML(k,t){
+  return `<div class="task-item${t.done?' done':''}" onclick="toggleTask('${k}','${t.id}')">
+    <div class="chkbox"><svg viewBox="0 0 10 8" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1,4 4,7 9,1"/></svg></div>
+    <span class="task-txt">${t.text}</span>
+    <span class="cpill ${t.cat}">${CATS[t.cat]||t.cat}</span>
+    <button class="delbtn" onclick="event.stopPropagation();delTask('${k}','${t.id}')">&#215;</button>
+  </div>`;
+}
+
+function addGoal(){
+  const name=document.getElementById('fG-name').value.trim();
+  const target=parseInt(document.getElementById('fG-target').value)||1;
+  const unit=document.getElementById('fG-unit').value.trim()||'times';
+  if(!name)return;
+  S.goals.push({id:uid(),name,target,current:0,unit,cat:document.getElementById('fG-cat').value,created:todayKey()});
+  document.getElementById('fG-name').value='';document.getElementById('fG-target').value='';document.getElementById('fG-unit').value='';
+  tf('fGoal');save();renderAll();
+}
+function stepGoal(id,d){const g=S.goals.find(g=>g.id===id);if(g){g.current=Math.max(0,g.current+d);save();renderAll();}}
+function delGoal(id){S.goals=S.goals.filter(g=>g.id!==id);save();renderAll();}
+
+function calcStreaks(){
+  const all=Object.keys(S.tasks).filter(k=>done(k).length>0).sort();
+  if(!all.length)return{current:0,max:0,total:0};
+  let maxS=1,s=1;
+  for(let i=1;i<all.length;i++){
+    const diff=(new Date(all[i])-new Date(all[i-1]))/(86400000);
+    if(diff===1)s++;else s=1;
+    if(s>maxS)maxS=s;
+  }
+  let cur=0;const today=new Date();
+  for(let i=0;i<1000;i++){
+    const d=new Date(today);d.setDate(today.getDate()-i);
+    if(done(fmt(d)).length>0)cur++;else break;
+  }
+  return{current:cur,max:maxS,total:all.length};
+}
+
+function destroyC(id){if(CH[id]){CH[id].destroy();delete CH[id];}}
+const CD={responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{boxWidth:10,font:{size:11},padding:10}}}};
+const GC='#F0EDE6';const TK={font:{size:10}};
+
+function renderToday(){
+  const k=todayKey(),tsList=ts(k),dn=done(k).length,tot=tsList.length,pct=tot?Math.round(dn/tot*100):0;
+  const wk=getWeekKeys().reduce((s,wk)=>s+done(wk).length,0);
+  const str=calcStreaks();
+  document.getElementById('statsToday').innerHTML=`
+    <div class="sc"><div class="sc-lbl">Tasks today</div><div class="sc-val">${dn}/${tot}</div><div class="sc-sub">completed</div></div>
+    <div class="sc"><div class="sc-lbl">Today %</div><div class="sc-val">${pct}%</div><div class="sc-sub">done</div></div>
+    <div class="sc"><div class="sc-lbl">Week done</div><div class="sc-val">${wk}</div><div class="sc-sub">this week</div></div>
+    <div class="sc"><div class="sc-lbl">Streak</div><div class="sc-val">${str.current} &#128293;</div><div class="sc-sub">days in a row</div></div>`;
+  const el=document.getElementById('list-today');
+  el.innerHTML=tsList.length?tsList.map(t=>tHTML(k,t)).join(''):`<div class="empty">No tasks yet</div>`;
+  destroyC('ch-donut');
+  const ctx=document.getElementById('ch-donut').getContext('2d');
+  CH['ch-donut']=new Chart(ctx,{type:'doughnut',data:{labels:['Done','Left'],datasets:[{data:[dn,Math.max(tot-dn,0)],backgroundColor:['#2A6040','#E6E1D8'],borderWidth:0}]},
+    options:{...CD,cutout:'70%',plugins:{legend:{display:false}}},
+    plugins:[{id:'c',afterDraw(chart){
+      const{ctx,chartArea:{width:w,height:h,left:l,top:tp}}=chart;
+      ctx.save();ctx.font=`600 26px 'DM Sans'`;ctx.fillStyle='#1C1A16';ctx.textAlign='center';ctx.textBaseline='middle';
+      ctx.fillText(`${pct}%`,l+w/2,tp+h/2-6);ctx.font=`400 10px 'DM Sans'`;ctx.fillStyle='#A09890';
+      ctx.fillText('done',l+w/2,tp+h/2+14);ctx.restore();}}]});
+  const gm=document.getElementById('goal-mini');
+  if(!S.goals.length){gm.innerHTML='<div class="empty">No goals yet — add in Goals tab</div>';return;}
+  gm.innerHTML=S.goals.map(g=>{
+    const pp=g.target>0?Math.min(100,Math.round(g.current/g.target*100)):0;
+    const cl=pp>=70?'hi':pp>=35?'md':'lo';
+    return `<div class="goal-item"><div class="gi-row"><span class="gi-name">${g.name}</span><span class="gi-meta">${g.current}/${g.target} ${g.unit}</span></div>
+      <div class="track"><div class="fill ${cl}" style="width:${pp}%"></div></div><div class="gpct">${pp}%</div></div>`;
+  }).join('');
+}
+
+function renderWeek(){
+  const keys=getWeekKeys(weekOffset);
+  const isThis=weekOffset===0;
+  const dates=keys.map(k=>new Date(k+'T00:00:00'));
+  document.getElementById('weekLabel').textContent=isThis?'This week':
+    `${dates[0].toLocaleDateString('en-US',{month:'short',day:'numeric'})} \u2013 ${dates[6].toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}`;
+  document.getElementById('weekHeat').innerHTML=keys.map((k,i)=>{
+    const tsList=ts(k),dn=done(k).length,tot=tsList.length,pct=tot?dn/tot:0;
+    const tod=k===todayKey(),fut=dates[i]>new Date();
+    const a=tot===0?0.06:0.12+pct*0.88;
+    const bg=tot===0?'#F0EDE6':`rgba(42,96,64,${a.toFixed(2)})`;
+    const tc=pct>0.55&&tot>0?'#FFF':'#1C1A16';
+    return `<div class="wh-day"><div class="wh-lbl">${DS[i]}</div>
+      <div class="wh-box" style="background:${bg};color:${tc};border-color:${tod?'#2A6040':'transparent'};opacity:${fut?.4:1}">${tot===0?'&#8212;':`${dn}/${tot}`}</div></div>`;
+  }).join('');
+  const dn=keys.map(k=>done(k).length),rem=keys.map((k,i)=>Math.max(0,ts(k).length-dn[i]));
+  destroyC('ch-weekbar');
+  CH['ch-weekbar']=new Chart(document.getElementById('ch-weekbar').getContext('2d'),{type:'bar',data:{labels:DS,datasets:[
+    {label:'Done',data:dn,backgroundColor:'#2A6040',borderRadius:4,borderSkipped:false},
+    {label:'Left',data:rem,backgroundColor:'#E6E1D8',borderRadius:4,borderSkipped:false}]},
+    options:{...CD,scales:{x:{stacked:true,grid:{display:false},ticks:TK},y:{stacked:true,beginAtZero:true,ticks:{...TK,precision:0},grid:{color:GC}}}}});
+  const ct={};keys.forEach(k=>done(k).forEach(t=>{ct[t.cat]=(ct[t.cat]||0)+1;}));
+  const ck=Object.keys(ct);destroyC('ch-catpie');
+  if(ck.length)CH['ch-catpie']=new Chart(document.getElementById('ch-catpie').getContext('2d'),{type:'pie',data:{labels:ck.map(k=>CATS[k]||k),datasets:[{data:ck.map(k=>ct[k]),backgroundColor:ck.map(k=>CC[k]||'#ccc'),borderWidth:1,borderColor:'#fff'}]},options:{...CD}});
+  let html='';
+  keys.forEach((k,i)=>{
+    const tsList=ts(k),dn2=done(k).length,tod=k===todayKey();
+    html+=`<div class="day-sec"><div class="day-sec-hdr"><span class="dbadge${tod?' tdy':''}">${DS[i]}${tod?' \u00b7 Today':''}</span><span style="font-size:11px;color:var(--t3)">${dn2}/${tsList.length} done</span></div>`;
+    html+=tsList.length?tsList.map(t=>tHTML(k,t)).join(''):`<div style="font-size:11px;color:var(--t3);padding:3px 0 7px">No tasks</div>`;
+    html+=`</div>`;
+  });
+  document.getElementById('week-task-list').innerHTML=html;
+}
+
+function renderMonth(){
+  const{year,month}=getMonthInfo(monthOffset);
+  document.getElementById('monthLabel').textContent=`${MONTHS[month]} ${year}`;
+  const firstDay=new Date(year,month,1).getDay();
+  const startOff=firstDay===0?6:firstDay-1;
+  const dim=new Date(year,month+1,0).getDate();
+  const today=todayKey();
+  let html=DS.map(d=>`<div class="mhdr">${d.slice(0,2)}</div>`).join('');
+  for(let i=0;i<startOff;i++)html+=`<div class="mcell ec"></div>`;
+  for(let d=1;d<=dim;d++){
+    const k=`${year}-${p(month+1)}-${p(d)}`;
+    const tsList=ts(k),dn=done(k).length,tot=tsList.length,pct=tot?dn/tot:0;
+    const fut=new Date(k+'T00:00:00')>new Date(),isT=k===today;
+    const fc=pct===0?'#E6E1D8':pct<0.5?'#A8D4B8':pct<0.8?'#6EBA94':'#2A6040';
+    html+=`<div class="mcell${isT?' tdc':''}${fut?' fc':''}" onclick="jumpDay('${k}')">
+      <div class="mc-num">${d}</div>
+      ${tot>0?`<div class="mc-bar"><div class="mc-fill" style="width:${Math.round(pct*100)}%;background:${fc}"></div></div><div class="mc-ct">${dn}/${tot}</div>`:''}
+    </div>`;
+  }
+  document.getElementById('monthGrid').innerHTML=html;
+  const days=Array.from({length:dim},(_,i)=>i+1);
+  const rates=days.map(d=>{const k=`${year}-${p(month+1)}-${p(d)}`;const tsList=ts(k);return tsList.length?Math.round(done(k).length/tsList.length*100):null;});
+  destroyC('ch-monthline');
+  CH['ch-monthline']=new Chart(document.getElementById('ch-monthline').getContext('2d'),{type:'line',data:{labels:days,datasets:[{label:'%',data:rates,borderColor:'#2A6040',backgroundColor:'rgba(42,96,64,.07)',borderWidth:2,fill:true,tension:.35,pointRadius:3,pointBackgroundColor:'#2A6040',spanGaps:true}]},
+    options:{...CD,scales:{x:{grid:{display:false},ticks:TK},y:{beginAtZero:true,max:100,ticks:{...TK,callback:v=>v+'%'},grid:{color:GC}}}}});
+  const ct={};days.forEach(d=>{done(`${year}-${p(month+1)}-${p(d)}`).forEach(t=>{ct[t.cat]=(ct[t.cat]||0)+1;});});
+  const ck=Object.keys(ct);destroyC('ch-monthcat');
+  if(ck.length)CH['ch-monthcat']=new Chart(document.getElementById('ch-monthcat').getContext('2d'),{type:'doughnut',data:{labels:ck.map(k=>CATS[k]||k),datasets:[{data:ck.map(k=>ct[k]),backgroundColor:ck.map(k=>CC[k]||'#ccc'),borderWidth:1,borderColor:'#fff'}]},options:{...CD,cutout:'50%'}});
+}
+
+function jumpDay(k){
+  const target=new Date(k+'T00:00:00'),today=new Date();
+  weekOffset=Math.round((target-today)/(7*86400000));
+  go('week',document.querySelectorAll('.tab')[1]);
+}
+
+function renderGoals(){
+  const el=document.getElementById('goal-list');
+  if(!S.goals.length){el.innerHTML='<div class="empty">No goals yet</div>';}
+  else el.innerHTML=S.goals.map(g=>{
+    const pp=g.target>0?Math.min(100,Math.round(g.current/g.target*100)):0;
+    const cl=pp>=70?'hi':pp>=35?'md':'lo';
+    return `<div class="goal-item">
+      <div class="gi-row"><span class="gi-name">${g.name}</span>
+        <span class="cpill ${g.cat}" style="font-size:9px;padding:2px 7px;border-radius:10px;font-weight:600">${CATS[g.cat]||g.cat}</span>
+        <button onclick="delGoal('${g.id}')" style="background:none;border:none;color:var(--t3);cursor:pointer;font-size:14px;padding:1px 4px">&#215;</button></div>
+      <div class="track"><div class="fill ${cl}" style="width:${pp}%"></div></div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-top:3px">
+        <div class="step-row"><button class="step-btn" onclick="stepGoal('${g.id}',-1)">&#8722;</button>
+          <span class="step-val">${g.current} / ${g.target} ${g.unit}</span>
+          <button class="step-btn" onclick="stepGoal('${g.id}',1)">+</button></div>
+        <span class="gpct">${pp}%</span></div></div>`;
+  }).join('');
+  destroyC('ch-goals');
+  if(!S.goals.length)return;
+  CH['ch-goals']=new Chart(document.getElementById('ch-goals').getContext('2d'),{type:'bar',data:{labels:S.goals.map(g=>g.name.length>20?g.name.slice(0,18)+'&#8230;':g.name),datasets:[
+    {label:'Current',data:S.goals.map(g=>g.current),backgroundColor:S.goals.map(g=>CC[g.cat]||'#ccc'),borderRadius:4,borderSkipped:false},
+    {label:'Left',data:S.goals.map(g=>Math.max(0,g.target-g.current)),backgroundColor:'#E6E1D8',borderRadius:4,borderSkipped:false}]},
+    options:{...CD,indexAxis:'y',scales:{x:{stacked:true,beginAtZero:true,grid:{color:GC},ticks:TK},y:{stacked:true,grid:{display:false},ticks:TK}}}});
+}
+
+function renderYear(){
+  const year=new Date().getFullYear()+yearOffset;
+  document.getElementById('yearLabel').textContent=year;
+  let html='';
+  for(let m=0;m<12;m++){
+    html+=`<div class="yh-row"><span class="yh-ml">${MS[m]}</span>`;
+    const dim=new Date(year,m+1,0).getDate();
+    for(let d=1;d<=dim;d++){
+      const k=`${year}-${p(m+1)}-${p(d)}`;
+      const tsList=ts(k),dn=done(k).length,tot=tsList.length;
+      const fut=new Date(k+'T00:00:00')>new Date();
+      let bg='#E6E1D8';
+      if(tot>0){const r=dn/tot;bg=r<0.35?'#CCE8D8':r<0.65?'#6EBA94':'#2A6040';}
+      const isT=k===todayKey();
+      html+=`<div class="yh-cell" style="background:${bg};${fut?'opacity:.3':''}${isT?';outline:2px solid #2A6040;outline-offset:1px':''}" data-k="${k}" data-d="${dn}" data-t="${tot}" onmousemove="showTT(event,this)" onmouseleave="hideTT()"></div>`;
+    }
+    html+=`</div>`;
+  }
+  document.getElementById('yearHeat').innerHTML=html;
+  const str=calcStreaks();
+  document.getElementById('curStreak').textContent=str.current;
+  document.getElementById('maxStreak').textContent=str.max;
+  document.getElementById('totalDays').textContent=str.total;
+  const allKeys=Array.from({length:366},(_,i)=>{const d=new Date(year,0,1);d.setDate(1+i);if(d.getFullYear()!==year)return null;return fmt(d);}).filter(Boolean);
+  const yDone=allKeys.reduce((s,k)=>s+done(k).length,0);
+  const yTot=allKeys.reduce((s,k)=>s+ts(k).length,0);
+  const actDays=allKeys.filter(k=>done(k).length>0).length;
+  document.getElementById('statsYear').innerHTML=`
+    <div class="sc"><div class="sc-lbl">Done in ${year}</div><div class="sc-val">${yDone}</div><div class="sc-sub">of ${yTot} total</div></div>
+    <div class="sc"><div class="sc-lbl">Active days</div><div class="sc-val">${actDays}</div><div class="sc-sub">with completed tasks</div></div>
+    <div class="sc"><div class="sc-lbl">Current streak</div><div class="sc-val">${str.current} &#128293;</div><div class="sc-sub">days in a row</div></div>
+    <div class="sc"><div class="sc-lbl">Best streak</div><div class="sc-val">${str.max} &#127942;</div><div class="sc-sub">all time</div></div>`;
+  const mRates=Array.from({length:12},(_,m)=>{
+    const dim=new Date(year,m+1,0).getDate();let tT=0,tD=0;
+    for(let d=1;d<=dim;d++){const k=`${year}-${p(m+1)}-${p(d)}`;tT+=ts(k).length;tD+=done(k).length;}
+    return tT>0?Math.round(tD/tT*100):null;
+  });
+  destroyC('ch-history');
+  CH['ch-history']=new Chart(document.getElementById('ch-history').getContext('2d'),{type:'line',data:{labels:MS,datasets:[{label:'Avg %',data:mRates,borderColor:'#2A6040',backgroundColor:'rgba(42,96,64,.07)',borderWidth:2,fill:true,tension:.4,pointRadius:4,pointBackgroundColor:'#2A6040',spanGaps:true}]},
+    options:{...CD,scales:{x:{grid:{display:false},ticks:TK},y:{beginAtZero:true,max:100,ticks:{...TK,callback:v=>v+'%'},grid:{color:GC}}}}});
+  const last30=Array.from({length:30},(_,i)=>{const d=new Date();d.setDate(d.getDate()-29+i);return fmt(d);});
+  destroyC('ch-streak');
+  CH['ch-streak']=new Chart(document.getElementById('ch-streak').getContext('2d'),{type:'bar',data:{labels:last30.map(k=>{const d=new Date(k+'T00:00:00');return `${d.getMonth()+1}/${d.getDate()}`;}),datasets:[{label:'Done',data:last30.map(k=>done(k).length),backgroundColor:last30.map(k=>done(k).length>0?'#2A6040':'#E6E1D8'),borderRadius:3,borderSkipped:false}]},
+    options:{...CD,plugins:{legend:{display:false}},scales:{x:{grid:{display:false},ticks:{...TK,maxRotation:45,maxTicksLimit:10}},y:{beginAtZero:true,ticks:{...TK,precision:0},grid:{color:GC}}}}});
+}
+
+function showTT(e,el){
+  const tt=document.getElementById('yhtt'),k=el.dataset.k,dn=el.dataset.d,tot=el.dataset.t;
+  const d=new Date(k+'T00:00:00');
+  tt.textContent=`${d.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})} \u00b7 ${tot>0?`${dn}/${tot} tasks done`:'No tasks'}`;
+  tt.style.display='block';tt.style.left=(e.clientX+12)+'px';tt.style.top=(e.clientY-10)+'px';
+}
+function hideTT(){document.getElementById('yhtt').style.display='none';}
+
+function go(name,btn){
+  document.querySelectorAll('.sec').forEach(s=>s.classList.remove('on'));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('on'));
+  document.getElementById('sec-'+name).classList.add('on');
+  if(btn)btn.classList.add('on');
+  renderAll();
+}
+
+function renderAll(){
+  const a=document.querySelector('.sec.on');if(!a)return;
+  const id=a.id;
+  if(id==='sec-today')renderToday();
+  else if(id==='sec-week')renderWeek();
+  else if(id==='sec-month')renderMonth();
+  else if(id==='sec-goals')renderGoals();
+  else if(id==='sec-year')renderYear();
+}
+
+const nd=new Date();
+document.getElementById('todayPill').textContent=nd.toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'});
+const dow=new Date().getDay();
+document.getElementById('fW-day').selectedIndex=dow===0?6:dow-1;
+load();renderAll();
+</script>
+</body>
+</html>
